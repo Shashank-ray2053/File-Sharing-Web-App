@@ -133,48 +133,63 @@
     <script>
         // Limit size (1GB = 1073741824 bytes)
         const MAX_FILE_SIZE = 1073741824; // 1GB
+        const fileKey = "uploadedFiles"; // key to access files in local storage
 
-        // Store uploaded files in an array (simulate file storage)
-        let uploadedFiles = [];
+        // Load previously uploaded files from localStorage (if any)
+        let uploadedFiles = JSON.parse(localStorage.getItem(fileKey)) || [];
+
+        // Function to display files
+        function displayFiles() {
+            const fileInfo = document.getElementById("file-info");
+            fileInfo.innerHTML = ""; // Clear current file list
+
+            if (uploadedFiles.length === 0) {
+                fileInfo.innerHTML = "<p>No files uploaded yet.</p>";
+                return;
+            }
+
+            const ul = document.createElement("ul");
+
+            // List each uploaded file
+            uploadedFiles.forEach((file, index) => {
+                const li = document.createElement("li");
+                li.textContent = file.name + " (" + (file.size / 1024 / 1024).toFixed(2) + " MB)";
+                ul.appendChild(li);
+            });
+
+            fileInfo.appendChild(ul);
+        }
+
+        // Load file list on page load
+        displayFiles();
 
         document.getElementById("file-input").addEventListener("change", function(event) {
             const fileInput = event.target;
-            const fileInfo = document.getElementById("file-info");
-
-            // Clear the previous file information
-            fileInfo.innerHTML = "";
-
-            // Get selected files
             const files = fileInput.files;
 
-            // Display and filter files by size
-            const ul = document.createElement("ul");
-            let validFiles = true;
+            const validFiles = [];
 
             for (let i = 0; i < files.length; i++) {
-                if (files[i].size > MAX_FILE_SIZE) {
-                    alert("File " + files[i].name + " is too large. Maximum size is 1GB.");
-                    validFiles = false;
+                if (files[i].size <= MAX_FILE_SIZE) {
+                    validFiles.push(files[i]);
                 } else {
-                    const li = document.createElement("li");
-                    li.textContent = files[i].name + " (" + (files[i].size / 1024 / 1024).toFixed(2) + " MB)";
-                    ul.appendChild(li);
-                    uploadedFiles.push(files[i]); // Add file to array
+                    alert(`File ${files[i].name} is too large. Max size is 1GB.`);
                 }
             }
 
-            if (validFiles) {
-                fileInfo.appendChild(ul); // Display valid files
-            } else {
-                uploadedFiles = []; // Clear uploaded files if any file is invalid
+            if (validFiles.length > 0) {
+                uploadedFiles = uploadedFiles.concat(validFiles); // Add valid files to the array
+                localStorage.setItem(fileKey, JSON.stringify(uploadedFiles)); // Save to localStorage
+                displayFiles(); // Update displayed file list
+                alert("Files uploaded successfully!");
             }
         });
 
         document.getElementById("upload-btn").addEventListener("click", function() {
-            if (uploadedFiles.length > 0) {
-                alert("Files uploaded successfully!");
+            if (uploadedFiles.length === 0) {
+                alert("Please select valid files to upload.");
             } else {
-                alert("Please select valid files (less than 1GB) to upload!");
+                alert("Files uploaded successfully!");
             }
         });
 
@@ -183,8 +198,7 @@
                 alert("No files uploaded yet.");
             } else {
                 // Simulate downloading the files
-                alert("Starting download for " + uploadedFiles.length + " file(s).");
-                uploadedFiles.forEach((file, index) => {
+                uploadedFiles.forEach((file) => {
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(file);
                     link.download = file.name;
