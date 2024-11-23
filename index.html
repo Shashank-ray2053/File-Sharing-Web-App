@@ -1,27 +1,148 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Upload</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>File Share App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            border-radius: 8px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .upload-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .upload-btn:hover {
+            background-color: #45a049;
+        }
+        .file-input {
+            margin-bottom: 20px;
+        }
+        .file-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .file-list li {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .file-link {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .file-link:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Upload Your File</h1>
-        <form id="fileForm" enctype="multipart/form-data">
-            <input type="file" name="file" id="file" required>
-            <button type="submit">Upload File</button>
-        </form>
 
-        <div id="fileLink" style="display: none;">
-            <p>File uploaded successfully! <a id="downloadLink" href="#" target="_blank">Click to download the file</a></p>
-        </div>
+<div class="container">
+    <h2>File Share App</h2>
+    <input type="file" id="file-input" class="file-input" multiple />
+    <button id="upload-btn" class="upload-btn">Upload Files</button>
 
-        <div id="error" style="display: none;"></div>
-    </div>
+    <h3>Uploaded Files</h3>
+    <ul id="file-list" class="file-list">
+        <!-- Dynamically populated list of uploaded files -->
+    </ul>
+</div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+<script>
+    const uploadBtn = document.getElementById('upload-btn');
+    const fileInput = document.getElementById('file-input');
+    const fileList = document.getElementById('file-list');
+
+    // Handle file uploads
+    uploadBtn.addEventListener('click', async () => {
+        const files = fileInput.files;
+        if (files.length === 0) {
+            alert("Please select a file to upload!");
+            return;
+        }
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+        }
+
+        try {
+            const response = await fetch('http://localhost:5000/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('Files uploaded successfully!');
+                loadUploadedFiles(); // Reload the file list
+            } else {
+                alert('Error uploading files!');
+            }
+        } catch (error) {
+            console.error("Error uploading files:", error);
+            alert('Error uploading files!');
+        }
+    });
+
+    // Function to load the list of uploaded files
+    async function loadUploadedFiles() {
+        try {
+            const response = await fetch('http://localhost:5000/files');
+            if (response.ok) {
+                const files = await response.json();
+                fileList.innerHTML = ''; // Clear the list first
+
+                files.forEach(file => {
+                    const li = document.createElement('li');
+                    const link = document.createElement('a');
+                    link.href = `http://localhost:5000/files/${file}`;
+                    link.textContent = file;
+                    link.classList.add('file-link');
+                    li.appendChild(link);
+                    fileList.appendChild(li);
+                });
+            } else {
+                alert('Error fetching files!');
+            }
+        } catch (error) {
+            console.error("Error loading files:", error);
+            alert('Error loading files!');
+        }
+    }
+
+    // Load the list of files when the page is loaded
+    window.onload = loadUploadedFiles;
+</script>
+
 </body>
 </html>
