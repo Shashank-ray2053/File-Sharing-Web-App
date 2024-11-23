@@ -3,146 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Share App</title>
+    <title>File Sharing App</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+        /* General Styles */
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
         }
+
+        /* Container for the whole app */
         .container {
             background-color: #ffffff;
-            padding: 40px;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            width: 400px;
-            border-radius: 8px;
-        }
-        h2 {
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             text-align: center;
+            width: 400px;
+        }
+
+        /* Header Styles */
+        header {
             margin-bottom: 20px;
         }
-        .upload-btn {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
+
+        h1 {
+            font-size: 2rem;
+            color: #333;
+        }
+
+        p {
+            color: #777;
+            font-size: 1rem;
+        }
+
+        /* File Upload Styles */
+        .file-upload {
+            position: relative;
+            margin: 20px 0;
+        }
+
+        .upload-btn, #download-btn {
+            display: inline-block;
             background-color: #4CAF50;
             color: white;
-            border: none;
+            padding: 10px 20px;
+            font-size: 1.1rem;
             border-radius: 5px;
             cursor: pointer;
-            margin-bottom: 20px;
+            transition: background-color 0.3s;
+            margin: 10px;
         }
-        .upload-btn:hover {
+
+        .upload-btn:hover, #download-btn:hover {
             background-color: #45a049;
         }
-        .file-input {
-            margin-bottom: 20px;
+
+        /* File Input */
+        #file-input {
+            display: none;
         }
-        .file-list {
-            list-style-type: none;
+
+        /* File Info Styles */
+        .file-info {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .file-info ul {
+            list-style: none;
             padding: 0;
         }
-        .file-list li {
-            background-color: #f9f9f9;
-            padding: 10px;
-            margin-bottom: 10px;
+
+        .file-info li {
+            background-color: #f1f1f1;
+            padding: 8px;
             border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 1rem;
         }
-        .file-link {
-            color: #007bff;
-            text-decoration: none;
+
+        /* Button Styles */
+        #upload-btn {
+            background-color: #008CBA;
+            border: none;
+            padding: 12px 20px;
+            color: white;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
         }
-        .file-link:hover {
-            text-decoration: underline;
+
+        #upload-btn:hover {
+            background-color: #007B8B;
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <header>
+            <h1>File Sharing App</h1>
+            <p>Upload and Download Files Easily</p>
+        </header>
 
-<div class="container">
-    <h2>File Share App</h2>
-    <input type="file" id="file-input" class="file-input" multiple />
-    <button id="upload-btn" class="upload-btn">Upload Files</button>
+        <div class="file-upload">
+            <input type="file" id="file-input" multiple />
+            <label for="file-input" class="upload-btn">Choose Files</label>
+        </div>
 
-    <h3>Uploaded Files</h3>
-    <ul id="file-list" class="file-list">
-        <!-- Dynamically populated list of uploaded files -->
-    </ul>
-</div>
+        <div id="file-info" class="file-info">
+            <!-- Display file names after upload -->
+        </div>
 
-<script>
-    const uploadBtn = document.getElementById('upload-btn');
-    const fileInput = document.getElementById('file-input');
-    const fileList = document.getElementById('file-list');
+        <button id="upload-btn" class="upload-btn">Upload Files</button>
+        <button id="download-btn" class="upload-btn" style="background-color: #ff5722;">Download Files</button>
+    </div>
 
-    // Handle file uploads
-    uploadBtn.addEventListener('click', async () => {
-        const files = fileInput.files;
-        if (files.length === 0) {
-            alert("Please select a file to upload!");
-            return;
-        }
+    <script>
+        // Limit size (1GB = 1073741824 bytes)
+        const MAX_FILE_SIZE = 1073741824; // 1GB
 
-        const formData = new FormData();
-        for (let i = 0; i < files.length; i++) {
-            formData.append('files', files[i]);
-        }
+        // Store uploaded files in an array (simulate file storage)
+        let uploadedFiles = [];
 
-        try {
-            const response = await fetch('http://localhost:5000/upload', {
-                method: 'POST',
-                body: formData
-            });
+        document.getElementById("file-input").addEventListener("change", function(event) {
+            const fileInput = event.target;
+            const fileInfo = document.getElementById("file-info");
 
-            if (response.ok) {
-                alert('Files uploaded successfully!');
-                loadUploadedFiles(); // Reload the file list
-            } else {
-                alert('Error uploading files!');
+            // Clear the previous file information
+            fileInfo.innerHTML = "";
+
+            // Get selected files
+            const files = fileInput.files;
+
+            // Display and filter files by size
+            const ul = document.createElement("ul");
+            let validFiles = true;
+
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].size > MAX_FILE_SIZE) {
+                    alert("File " + files[i].name + " is too large. Maximum size is 1GB.");
+                    validFiles = false;
+                } else {
+                    const li = document.createElement("li");
+                    li.textContent = files[i].name + " (" + (files[i].size / 1024 / 1024).toFixed(2) + " MB)";
+                    ul.appendChild(li);
+                    uploadedFiles.push(files[i]); // Add file to array
+                }
             }
-        } catch (error) {
-            console.error("Error uploading files:", error);
-            alert('Error uploading files!');
-        }
-    });
 
-    // Function to load the list of uploaded files
-    async function loadUploadedFiles() {
-        try {
-            const response = await fetch('http://localhost:5000/files');
-            if (response.ok) {
-                const files = await response.json();
-                fileList.innerHTML = ''; // Clear the list first
+            if (validFiles) {
+                fileInfo.appendChild(ul); // Display valid files
+            } else {
+                uploadedFiles = []; // Clear uploaded files if any file is invalid
+            }
+        });
 
-                files.forEach(file => {
-                    const li = document.createElement('li');
+        document.getElementById("upload-btn").addEventListener("click", function() {
+            if (uploadedFiles.length > 0) {
+                alert("Files uploaded successfully!");
+            } else {
+                alert("Please select valid files (less than 1GB) to upload!");
+            }
+        });
+
+        document.getElementById("download-btn").addEventListener("click", function() {
+            if (uploadedFiles.length === 0) {
+                alert("No files uploaded yet.");
+            } else {
+                // Simulate downloading the files
+                alert("Starting download for " + uploadedFiles.length + " file(s).");
+                uploadedFiles.forEach((file, index) => {
                     const link = document.createElement('a');
-                    link.href = `http://localhost:5000/files/${file}`;
-                    link.textContent = file;
-                    link.classList.add('file-link');
-                    li.appendChild(link);
-                    fileList.appendChild(li);
+                    link.href = URL.createObjectURL(file);
+                    link.download = file.name;
+                    link.click();
                 });
-            } else {
-                alert('Error fetching files!');
             }
-        } catch (error) {
-            console.error("Error loading files:", error);
-            alert('Error loading files!');
-        }
-    }
-
-    // Load the list of files when the page is loaded
-    window.onload = loadUploadedFiles;
-</script>
-
+        });
+    </script>
 </body>
 </html>
